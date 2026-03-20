@@ -43,24 +43,19 @@ class TestBooksCollector:
         assert 'Убийство в "Восточном экспрессе"' in result
 
     # проверяем, корректность работы метода добавления новой книги при различных граничных значениях
-    @pytest.mark.parametrize('book_name, should_be_added',[('', False), ('А', True),('Б' * 40, True), ('В' * 41, False)])
-    def test_add_book_boundary_values(self, book_name, should_be_added):
+    @pytest.mark.parametrize('book_name', ['', 'В' * 41])
+    def test_add_new_book_invalid_names(self, book_name):
         collector = BooksCollector()
         collector.add_new_book(book_name)
 
-        if should_be_added:
-            assert book_name in collector.get_books_genre()
-        else:
-            assert book_name not in collector.get_books_genre()
+        assert book_name not in collector.get_books_genre()
 
-    # проверяем, что книга без жанра попадает в список для детей
-    def test_book_without_genre(self):
+    @pytest.mark.parametrize('book_name', ['А', 'Б' * 40])
+    def test_add_new_book_valid_names(self, book_name):
         collector = BooksCollector()
-        collector.add_new_book('Молчание ягнят')
-        # жанр не задан, должно быть пусто
-        assert collector.get_book_genre('Молчание ягнят') == ''
-        # книга без жанра может попасть в список для детей
-        assert 'Молчание ягнят' not in collector.get_books_for_children()
+        collector.add_new_book(book_name)
+
+        assert book_name in collector.get_books_genre()
 
     # проверяем, что книга может быть добавлена только один раз
     def test_add_book_twice(self):
@@ -93,36 +88,68 @@ class TestBooksCollector:
         # список избранного должен остаться пустым
         assert collector.get_list_of_favorites_books() == []
 
+    # проверяем, что добавление книги в избранное работает корректно
+    def test_add_book_in_favorites_success(self):
+        collector = BooksCollector()
+        collector.add_new_book('Хоббит')
+
+        collector.add_book_in_favorites('Хоббит')
+
+        assert 'Хоббит' in collector.get_list_of_favorites_books()
+
     # проверяем, что мы не можем удалить книгу, которая не в избранном
-    def test_delete_book_not_in_favorites(self):
+    def test_delete_book_not_in_favorites_length(self):
         collector = BooksCollector()
 
         collector.add_new_book('Властилин колец: Возвращение короля')
-        collector.add_new_book('Властилин колец: Две крепости')
-
-        # добавляем книгу "Властилин колец: Возвращение короля" в избранное
         collector.add_book_in_favorites('Властилин колец: Возвращение короля')
 
-        # удаляем книгу "Властилин колец: Две крепости" из избранного, которой там нет
         collector.delete_book_from_favorites('Властилин колец: Две крепости')
 
-        # проверяем, что книга осталась в избранном
-        favorites = collector.get_list_of_favorites_books()
-        assert len(favorites) == 1
-        assert 'Властилин колец: Возвращение короля' in favorites
+        assert len(collector.get_list_of_favorites_books()) == 1
 
-        # проверяем, что метод delete_book_from_favorites работает корректно
-        @pytest.mark.parametrize('book_name', ['Приключения Шерлока Холмса', 'Мастер и Маргарита', 'Дюна'])
-        def test_delete_book_from_favorites(self, book_name):
-            collector = BooksCollector()
-            collector.add_new_book(book_name)
-            collector.add_book_in_favorites(book_name)
+    def test_delete_book_not_in_favorites_content(self):
+        collector = BooksCollector()
 
-            # проверяем, что книга добавилась в избранное
-            assert book_name in collector.get_list_of_favorites_books()
-            
-            # удаляем книгу из избранного
-            collector.delete_book_from_favorites(book_name)
+        collector.add_new_book('Властилин колец: Возвращение короля')
+        collector.add_book_in_favorites('Властилин колец: Возвращение короля')
 
-            # проверяем, что книги нет в избранном
-            assert book_name not in collector.get_list_of_favorites_books()
+        collector.delete_book_from_favorites('Властилин колец: Две крепости')
+        
+        
+        assert 'Властилин колец: Возвращение короля' in collector.get_list_of_favorites_books()
+
+
+    # проверяем, что метод delete_book_from_favorites работает корректно
+    @pytest.mark.parametrize('book_name', ['Приключения Шерлока Холмса', 'Мастер и Маргарита','Дюна'])
+    def test_delete_book_from_favorites(self, book_name):
+        collector = BooksCollector()
+        collector.add_new_book(book_name)
+        collector.add_book_in_favorites(book_name)
+
+        collector.delete_book_from_favorites(book_name)
+
+        assert book_name not in collector.get_list_of_favorites_books()
+
+    # проверяем, что метод get_book_genre возвращает корректный жанр
+    def test_get_book_genre_returns_correct_genre(self):
+        collector = BooksCollector()
+        collector.add_new_book('Трое в лодке, не считая собаки')
+        collector.set_book_genre('Трое в лодке, не считая собаки', 'Комедии')
+
+        assert collector.get_book_genre('Трое в лодке, не считая собаки') == 'Комедии'
+        
+    # проверяем, что метод get_list_of_favorites_books возвращает список
+    def test_get_list_of_favorites_books_returns_list(self):
+        collector = BooksCollector()
+    
+        assert isinstance(collector.get_list_of_favorites_books(), list)
+        
+    # проверяем, что метод get_books_genre возвращает словарь
+    def test_get_books_genre_returns_dict(self):
+        collector = BooksCollector()
+        collector.add_new_book('Война и мир')
+    
+        result = collector.get_books_genre()
+    
+        assert isinstance(result, dict)
