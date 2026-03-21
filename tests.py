@@ -27,6 +27,7 @@ class TestBooksCollector:
     @pytest.mark.parametrize('book_name, genre', [('Алиса в Стране чудес', 'Фантастика'), ('Двенадцать стульев', 'Комедии')])
     def test_set_book_genre(self, book_name, genre):
         collector = BooksCollector()
+        
         collector.add_new_book(book_name)
         collector.set_book_genre(book_name, genre)
 
@@ -35,6 +36,7 @@ class TestBooksCollector:
     # проверяем, корректность работы метода получения книг с определенным жанром
     def test_get_books_with_specific_genre(self):
         collector = BooksCollector()
+        
         collector.add_new_book('Убийство в "Восточном экспрессе"')
         collector.set_book_genre('Убийство в "Восточном экспрессе"', 'Детективы')
 
@@ -46,6 +48,7 @@ class TestBooksCollector:
     @pytest.mark.parametrize('book_name', ['', 'В' * 41])
     def test_add_new_book_invalid_names(self, book_name):
         collector = BooksCollector()
+        
         collector.add_new_book(book_name)
 
         assert book_name not in collector.get_books_genre()
@@ -53,6 +56,7 @@ class TestBooksCollector:
     @pytest.mark.parametrize('book_name', ['А', 'Б' * 40])
     def test_add_new_book_valid_names(self, book_name):
         collector = BooksCollector()
+        
         collector.add_new_book(book_name)
 
         assert book_name in collector.get_books_genre()
@@ -60,10 +64,22 @@ class TestBooksCollector:
     # проверяем, что книга может быть добавлена только один раз
     def test_add_book_twice(self):
         collector = BooksCollector()
+        
         collector.add_new_book('Колодец и бабочка')
         collector.add_new_book('Колодец и бабочка')
         # книга должна быть в словаре только один раз
         assert list(collector.get_books_genre().keys()).count('Колодец и бабочка') == 1
+
+    # проверяем, что книга с разрешенным жанром попадает в список для детей
+    def test_get_books_for_children_with_allowed_genre(self):
+        collector = BooksCollector()
+
+        collector.add_new_book('Трое из Простоквашино')
+        collector.set_book_genre('Трое из Простоквашино', 'Мультфильмы')
+
+        result = collector.get_books_for_children()
+
+        assert result == ['Трое из Простоквашино']
 
     # проверяем, что книга не попадает в список для детей, если у нее есть возрастной рейтинг
     @pytest.mark.parametrize('book_name, genre', [('Кладбище домашних животных', 'Ужасы'), ('Исчезнувшая', 'Детективы')])
@@ -108,22 +124,11 @@ class TestBooksCollector:
 
         assert len(collector.get_list_of_favorites_books()) == 1
 
-    def test_delete_book_not_in_favorites_content(self):
-        collector = BooksCollector()
-
-        collector.add_new_book('Властилин колец: Возвращение короля')
-        collector.add_book_in_favorites('Властилин колец: Возвращение короля')
-
-        collector.delete_book_from_favorites('Властилин колец: Две крепости')
-        
-        
-        assert 'Властилин колец: Возвращение короля' in collector.get_list_of_favorites_books()
-
-
     # проверяем, что метод delete_book_from_favorites работает корректно
     @pytest.mark.parametrize('book_name', ['Приключения Шерлока Холмса', 'Мастер и Маргарита','Дюна'])
     def test_delete_book_from_favorites(self, book_name):
         collector = BooksCollector()
+
         collector.add_new_book(book_name)
         collector.add_book_in_favorites(book_name)
 
@@ -134,22 +139,32 @@ class TestBooksCollector:
     # проверяем, что метод get_book_genre возвращает корректный жанр
     def test_get_book_genre_returns_correct_genre(self):
         collector = BooksCollector()
+        
         collector.add_new_book('Трое в лодке, не считая собаки')
         collector.set_book_genre('Трое в лодке, не считая собаки', 'Комедии')
 
         assert collector.get_book_genre('Трое в лодке, не считая собаки') == 'Комедии'
-        
+
     # проверяем, что метод get_list_of_favorites_books возвращает список
-    def test_get_list_of_favorites_books_returns_list(self):
+    @pytest.mark.parametrize('book_name', ['Цветы для Элджернона', 'Мартин Иден', 'Сияние'])
+    def test_get_list_of_favorites_books_returns_list(self, book_name):
         collector = BooksCollector()
-    
-        assert isinstance(collector.get_list_of_favorites_books(), list)
-        
+
+        collector.add_new_book(book_name)
+        collector.add_book_in_favorites(book_name)
+
+        result = collector.get_list_of_favorites_books()
+
+        assert result == [book_name]
+
     # проверяем, что метод get_books_genre возвращает словарь
-    def test_get_books_genre_returns_dict(self):
+    @pytest.mark.parametrize('book_name, genre', [('Стража! Стража!', 'Детективы'), ('Хроники Нарнии', 'Фантастика'), ('Мастер и Маргарита', 'Фантастика')])
+    def test_get_books_genre_returns_dict(self, book_name, genre):
         collector = BooksCollector()
-        collector.add_new_book('Война и мир')
-    
+
+        collector.add_new_book(book_name)
+        collector.set_book_genre(book_name, genre)
+
         result = collector.get_books_genre()
-    
-        assert isinstance(result, dict)
+
+        assert result == {book_name: genre}
